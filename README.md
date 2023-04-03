@@ -1,7 +1,11 @@
-Setting up a local instance of Whole Tale
-=========================================
+Setting up a local instance of HTMDEC
+======================================
 
-This directory contains scripts required to run a full instance of the Whole Tale platform  on a single system (e.g., laptop or VM). The installation uses a predefined domain `*.local.wholetale.org` which maps to localhost. This means that VM-based installations will require port forwarding to access (see below).
+This directory contains scripts required to run a full instance of the HTMDEC
+platform on a single system (e.g., laptop or VM). The installation requires
+either a preconfigured wildcard domain with TLS termination or a predefined
+domain (e.g., `*.local.htmdec.org`) which maps to localhost. This approach
+requires that VM-based installations use port forwarding to access (see below).
 
 
 System requirements

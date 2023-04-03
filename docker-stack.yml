@@ -4,8 +4,12 @@ services:
   traefik:
     image: traefik:v2.4
     ports:
-      - "80:80"
-      - "443:443"
+      - target: 80
+        published: 80
+        mode: host
+      - target: 443
+        published: 443
+        mode: host
       - "8080:8080"
     networks:
       - traefik-net
@@ -17,9 +21,6 @@ services:
       replicas: 1
       labels:
         - "traefik.enable=false"
-    environment:
-      - GODADDY_API_KEY=$WT_GODADDY_API_KEY
-      - GODADDY_API_SECRET=$WT_GODADDY_API_SECRET
 
   mongo:
     image: mongo:3.2
@@ -40,10 +41,13 @@ services:
       - celery
       - mongo
     volumes:
-      - ./volumes:/tmp/data
+      - /srv/hemi01-j01/htmdec/wt_volumes:/volumes
+      - /srv/hemi01-j01:/srv/hemi01-j01:ro
       - ./girder/girder.local.cfg:/girder/girder/conf/girder.local.cfg
       - ./src/wholetale:/girder/plugins/wholetale
       - ./src/wt_data_manager:/girder/plugins/wt_data_manager
+      - ./src/sem_viewer:/girder/plugins/sem_viewer
+      - ./src/table_view:/girder/plugins/table_view
       - ./src/wt_home_dir:/girder/plugins/wt_home_dir
       - ./src/wt_versioning:/girder/plugins/wt_versioning
       - ./src/globus_handler:/girder/plugins/globus_handler
@@ -53,26 +57,26 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - /tmp:/tmp
     environment:
-      - DOMAIN=local.wholetale.org
-      - DASHBOARD_URL=https://dashboard.local.wholetale.org
-      - GOSU_USER=girder:girder:999
-      - "GOSU_CHOWN=/tmp/data"
+      - DOMAIN=htmdec.org
+      - DASHBOARD_URL=https://dashboard.htmdec.org
+      - GOSU_USER=girder:girder:987
       - DATAONE_URL=https://cn-stage-2.test.dataone.org/cn
       - HOSTDIR=/
+        #  - "GOSU_CHOWN=/volumes"
     deploy:
       replicas: 1
       labels:
         - "traefik.enable=true"
-        - "traefik.http.routers.girder.rule=Host(`girder.local.wholetale.org`)"
+        - "traefik.http.routers.girder.rule=Host(`girder.htmdec.org`) || Host(`data.htmdec.org`)"
         - "traefik.http.routers.girder.entrypoints=websecure"
         - "traefik.http.routers.girder.tls=true"
         - "traefik.http.routers.girder.tls.certresolver=default"
-        - "traefik.http.routers.girder.tls.domains[0].main=local.wholetale.org"
-        - "traefik.http.routers.girder.tls.domains[0].sans=*.local.wholetale.org"
+        - "traefik.http.routers.girder.tls.domains[0].main=htmdec.org"
+        - "traefik.http.routers.girder.tls.domains[0].sans=*.htmdec.org"
         - "traefik.http.services.girder.loadbalancer.server.port=8080"
         - "traefik.http.services.girder.loadbalancer.passhostheader=true"
         - "traefik.docker.network=wt_traefik-net"
-        - "traefik.http.middlewares.girder.forwardauth.address=http://girder:8080/api/v1/instance/authorize/"
+        - "traefik.http.middlewares.girder.forwardauth.address=http://girder:8080/api/v1/user/authorize/?instance=true"
         - "traefik.http.middlewares.girder.forwardauth.trustforwardheader=true"
 
   logger:
@@ -100,16 +104,16 @@ services:
     networks:
       - traefik-net
     environment:
-      - GIRDER_API_URL=https://girder.local.wholetale.org/api/v1
+      - GIRDER_API_URL=https://girder.htmdec.org/api/v1
       - AUTH_PROVIDER=Globus
       - DATAONE_URL=https://cn.dataone.org/cn/v2
       - RTD_URL=https://wholetale.readthedocs.io/en/latest
-      - DASHBOARD_DEV=true
+      - DASHBOARD_DEV=false
     deploy:
       replicas: 1
       labels:
         - "traefik.enable=true"
-        - "traefik.http.routers.dashboard.rule=Host(`dashboard.local.wholetale.org`)"
+        - "traefik.http.routers.dashboard.rule=Host(`dashboard.htmdec.org`)"
         - "traefik.http.routers.dashboard.entrypoints=websecure"
         - "traefik.http.routers.dashboard.tls=true"
         - "traefik.http.services.dashboard.loadbalancer.server.port=80"
@@ -152,7 +156,7 @@ services:
       replicas: 1
       labels:
         - "traefik.enable=true"
-        - "traefik.http.routers.registry.rule=Host(`registry.local.wholetale.org`)"
+        - "traefik.http.routers.registry.rule=Host(`registry.htmdec.org`)"
         - "traefik.http.routers.registry.entrypoints=websecure"
         - "traefik.http.routers.registry.tls=true"
         - "traefik.http.services.registry.loadbalancer.server.port=5000"
@@ -169,12 +173,51 @@ services:
       replicas: 1
       labels:
         - "traefik.enable=true"
-        - "traefik.http.routers.images.rule=Host(`images.local.wholetale.org`)"
+        - "traefik.http.routers.images.rule=Host(`images.htmdec.org`)"
         - "traefik.http.routers.images.rule=Method(`GET`)"
         - "traefik.http.routers.images.entrypoints=websecure"
         - "traefik.http.routers.images.tls=true"
         - "traefik.http.services.images.loadbalancer.server.port=5000"
         - "traefik.http.services.images.loadbalancer.passhostheader=true"
+        - "traefik.docker.network=wt_traefik-net"
+
+  docs:
+    image: xarthisius/htmdec-docs:latest
+    networks:
+      - traefik-net
+    deploy:
+      replicas: 1
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.docs.rule=Host(`docs.htmdec.org`)"
+        - "traefik.http.routers.docs.entrypoints=websecure"
+        - "traefik.http.routers.docs.tls=true"
+        - "traefik.http.services.docs.loadbalancer.server.port=80"
+        - "traefik.http.services.docs.loadbalancer.passhostheader=false"
+        - "traefik.docker.network=wt_traefik-net"
+        - "traefik.http.middlewares.docs.forwardauth.address=http://girder:8080/api/v1/user/authorize/"
+        - "traefik.http.middlewares.docs.forwardauth.trustforwardheader=true"
+        - "traefik.http.routers.docs.middlewares=docs"
+        - "com.centurylinklabs.watchtower.enable=true"
+
+  dhwebhook:
+    image: xarthisius/dockerhub_webhook:htmdecdocs 
+    networks:
+      - traefik-net
+    environment:
+      - DOCKER_USERNAME=xarthisius
+      - DOCKER_PASSWORD=63f2cb3f-0cc1-4616-bb3c-8a6b92c60332
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    deploy:
+      replicas: 1
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.dhwebhook.rule=Host(`dhwebhook.htmdec.org`)"
+        - "traefik.http.routers.dhwebhook.entrypoints=websecure"
+        - "traefik.http.routers.dhwebhook.tls=true"
+        - "traefik.http.services.dhwebhook.loadbalancer.server.port=80"
+        - "traefik.http.services.dhwebhook.loadbalancer.passhostheader=true"
         - "traefik.docker.network=wt_traefik-net"
 
 #  celery_worker:
@@ -184,13 +227,13 @@ services:
 #    labels:
 #      - "traefik.enable=false"
 #    environment:
-#      - GIRDER_API_URL=https://girder.local.wholetale.org/api/v1
+#      - GIRDER_API_URL=https://girder.htmdec.org/api/v1
 #      - HOSTDIR=/host
-#      - DOMAIN=local.wholetale.org
+#      - DOMAIN=htmdec.org
 #      - TRAEFIK_NETWORK=wt_traefik-net
 #      - TRAEFIK_ENTRYPOINT=https
 #      - REGISTRY_USER=fido
-#      - REGISTRY_URL=https://registry.local.wholetale.org
+#      - REGISTRY_URL=https://registry.htmdec.org
 #      - REGISTRY_PASS=secretpass
 #    volumes:
 #      - /var/run/docker.sock:/var/run/docker.sock:ro
@@ -206,6 +249,10 @@ services:
 
 
 networks:
+  default:
+    driver: bridge
+    driver_opts:
+      com.docker.network.driver.mtu: 9000
   traefik-net:
     driver: overlay
   mongo:

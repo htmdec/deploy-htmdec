@@ -47,12 +47,18 @@ src/globus_handler:
 src/ngx-dashboard:
 	git clone https://github.com/whole-tale/ngx-dashboard src/ngx-dashboard
 
-sources: src src/gwvolman src/wholetale src/wt_data_manager src/wt_home_dir src/globus_handler src/girderfs src/ngx-dashboard src/virtual_resources src/wt_versioning
+src/sem_viewer:
+	git clone https://github.com/htmdec/sem_viewer src/sem_viewer
+
+src/table_view:
+	git clone https://github.com/htmdec/table_view src/table_view
+
+sources: src src/gwvolman src/wholetale src/wt_data_manager src/wt_home_dir src/globus_handler src/girderfs src/ngx-dashboard src/virtual_resources src/wt_versioning src/sem_viewer src/table_view
 
 dirs: $(SUBDIRS)
 
 $(SUBDIRS):
-	@sudo mkdir -p $@
+	@mkdir -p $@
 
 services: dirs sources
 
@@ -66,8 +72,8 @@ dev: services
 	    cid=$$(docker ps --filter=name=wt_girder -q) ; \
 	done; \
 	true
-	docker exec -ti $$(docker ps --filter=name=wt_girder -q) girder-install plugin plugins/wt_data_manager plugins/wholetale plugins/wt_home_dir plugins/globus_handler plugins/virtual_resources plugins/wt_versioning
-	docker exec -ti $$(docker ps --filter=name=wt_girder -q) girder-install web --dev --plugins=oauth,gravatar,jobs,worker,wt_data_manager,wholetale,wt_home_dir,globus_handler
+	docker exec -ti $$(docker ps --filter=name=wt_girder -q) girder-install plugin plugins/wt_data_manager plugins/wholetale plugins/wt_home_dir plugins/globus_handler plugins/virtual_resources plugins/wt_versioning plugins/homepage plugins/sem_viewer
+	docker exec -ti $$(docker ps --filter=name=wt_girder -q) girder-install web --dev --plugins=oauth,gravatar,jobs,worker,wt_data_manager,wholetale,wt_home_dir,globus_handler,homepage,sem_viewer,table_view,item_previews
 	docker exec --user=root -ti $$(docker ps --filter=name=wt_girder -q) pip install -r /gwvolman/requirements.txt -e /gwvolman
 	docker exec --user=root -ti $$(docker ps --filter=name=wt_girder -q) pip install -e /girderfs
 	./setup_girder.py
@@ -141,9 +147,9 @@ clean:
 	    sudo umount -lf $$subdir || true ; \
 	  done \
 	done; true
-	for dir in ps workspaces homes base versions runs mountpoints ; do \
-	  sudo rm -rf volumes/$$dir ; \
-	done; true
+	#for dir in ps workspaces homes base versions runs mountpoints ; do \
+	#  sudo rm -rf volumes/$$dir ; \
+	#done; true
 	-docker volume rm wt_mongo-cfg wt_mongo-data
 
 status:

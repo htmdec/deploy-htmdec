@@ -8,8 +8,8 @@ import sys
 params = {
     "login": "admin",
     "email": "root@dev.null",
-    "firstName": "John",
-    "lastName": "Doe",
+    "firstName": "Material",
+    "lastName": "Guy",
     "password": "arglebargle123",
     "admin": True,
 }
@@ -18,12 +18,12 @@ headers = {"Content-Type": "application/json", "Accept": "application/json"}
 
 def final_msg():
     print("-------------- You should be all set!! -------------")
-    print("try going to https://girder.local.wholetale.org and log in with: ")
+    print("try going to https://girder.htmdec.org and log in with: ")
     print("  user : %s" % params["login"])
     print("  pass : %s" % params["password"])
 
 
-api_url = "https://girder.local.wholetale.org/api/v1"
+api_url = "https://girder.htmdec.org/api/v1"
 
 # Give girder time to start
 while True:
@@ -51,7 +51,7 @@ r = requests.post(
     params={
         "type": 0,
         "name": "Base",
-        "root": "/tmp/data/base",
+        "root": "/volumes/base",
     },
 )
 
@@ -60,6 +60,7 @@ plugins = [
     "oauth",
     "gravatar",
     "jobs",
+    "homepage",
     "worker",
     "globus_handler",
     "virtual_resources",
@@ -67,6 +68,9 @@ plugins = [
     "wholetale",
     "wt_home_dir",
     "wt_versioning",
+    "sem_viewer",
+    "table_view",
+    "item_previews",
 ]
 r = requests.put(
     api_url + "/system/plugins",
@@ -96,7 +100,7 @@ print("Setting up Plugin")
 settings = [
     {
         "key": "core.cors.allow_origin",
-        "value": "https://dashboard.local.wholetale.org,http://localhost:4200,https://legacy.local.wholetale.org",
+        "value": "https://dashboard.htmdec.org,http://localhost:4200,https://legacy.htmdec.org",
     },
     {
         "key": "core.cors.allow_headers",
@@ -107,7 +111,7 @@ settings = [
             "X-Forwarded-Host, Remote-Addr, Cache-Control"
         ),
     },
-    {"key": "core.cookie_domain", "value": ".local.wholetale.org"},
+    {"key": "core.cookie_domain", "value": ".htmdec.org"},
     {"key": "core.secure_cookie", "value": True},
     {"key": "worker.api_url", "value": "http://girder:8080/api/v1"},
     {"key": "worker.broker", "value": "redis://redis/"},
@@ -132,11 +136,11 @@ settings = [
         "key": "wholetale.zenodo_extra_hosts",
         "value": ["https://sandbox.zenodo.org/record/"]
     },
-    {"key": "dm.private_storage_path", "value": "/tmp/data/ps"},
-    {"key": "wthome.homedir_root", "value": "/tmp/data/homes"},
-    {"key": "wthome.taledir_root", "value": "/tmp/data/workspaces"},
-    {"key": "wtversioning.runs_root", "value": "/tmp/data/runs"},
-    {"key": "wtversioning.versions_root", "value": "/tmp/data/versions"},
+    {"key": "dm.private_storage_path", "value": "/volumes/ps"},
+    {"key": "wthome.homedir_root", "value": "/volumes/homes"},
+    {"key": "wthome.taledir_root", "value": "/volumes/workspaces"},
+    {"key": "wtversioning.runs_root", "value": "/volumes/runs"},
+    {"key": "wtversioning.versions_root", "value": "/volumes/versions"},
 ]
 
 r = requests.put(

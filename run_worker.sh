@@ -1,6 +1,6 @@
 #!/bin/sh
 
-domain=local.wholetale.org
+domain=htmdec.org
 role=manager,celery
 image=wholetale/gwvolman:latest
 registry_user=fido
@@ -29,14 +29,14 @@ docker run \
     -e REGISTRY_USER=${registry_user} \
     -e REGISTRY_URL=https://registry.${domain} \
     -e REGISTRY_PASS=${registry_pass} \
-    -e WT_LICENSE_PATH="$PWD"/volumes/licenses \
-    -e WT_VOLUMES_PATH="$PWD"/volumes \
+    -e WT_LICENSE_PATH=/srv/hemi01-j01/htmdec/wt_volumes/licenses \
+    -e WT_VOLUMES_PATH=/srv/hemi01-j01/htmdec/wt_volumes \
     -e MATLAB_FILE_INSTALLATION_KEY=${matlab_file_installation_key} \
     -v /var/run/docker.sock:/var/run/docker.sock:ro \
     -v /tmp:/tmp \
     -v $PWD/src/gwvolman:/gwvolman \
     -v $PWD/src/girderfs:/girderfs \
-    --mount type=bind,source="$PWD/volumes",target="$PWD/volumes",bind-propagation=rshared \
+    --mount type=bind,source="/srv/hemi01-j01/htmdec/wt_volumes",target="/srv/hemi01-j01/htmdec/wt_volumes",bind-propagation=rshared \
     --device /dev/fuse \
     --cap-add SYS_ADMIN \
     --security-opt apparmor:unconfined \
